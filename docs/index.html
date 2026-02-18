@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How well do multi-modal LLMs hear Mandarin tones? Can they hear tones? Let's find out!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf9f6;
+      --text: #1a1a1a;
+      --muted: #5c5c5c;
+      --accent: #2d5a4a;
+      --accent-light: #e8f0ed;
+      --border: #e0ddd8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.65;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+    h1, h2, h3 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-weight: 400;
+      color: var(--text);
+    }
+    h1 { font-size: 2.25rem; margin: 0 0 0.5rem; }
+    h2 { font-size: 1.6rem; margin: 2.5rem 0 1rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 1.25rem; margin: 1.5rem 0 0.6rem; }
+    p { margin: 0 0 1rem; }
+    .subtitle { font-size: 1.1rem; color: var(--muted); margin-bottom: 2rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ul { margin: 0 0 1rem; padding-left: 1.4rem; }
+    li { margin-bottom: 0.35rem; }
+    figure { margin: 1.75rem 0; }
+    figure img { width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border); }
+    figcaption { margin-top: 0.5rem; font-size: 0.9rem; color: var(--muted); }
+    .audio-block {
+      background: var(--accent-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+    }
+    .audio-block h4 { margin: 0 0 0.5rem; font-size: 1rem; font-family: inherit; color: var(--accent); }
+    .audio-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 0.6rem; }
+    .audio-row label { min-width: 4rem; font-size: 0.95rem; }
+    audio { flex: 1; min-width: 200px; max-width: 320px; height: 36px; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; }
+    th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { font-weight: 600; color: var(--muted); }
+    .num { text-align: right; }
+    code { font-size: 0.9em; background: #eee; padding: 0.15em 0.4em; border-radius: 4px; }
+    .note { font-size: 0.95rem; color: var(--muted); font-style: italic; margin: 0.5rem 0 1rem; }
+    /* Transparency: conversation log */
+    .chat-user {
+      background: #e8f5e9;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0;
+    }
+    .chat-user h1, .chat-user h2, .chat-user h3 { font-size: 1rem; margin: 0.5rem 0 0.25rem; }
+    .chat-user p:first-child { margin-top: 0; }
+    .chat-user p:last-child { margin-bottom: 0; }
+    .chat-cursor {
+      margin: 0.75rem 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .chat-cursor details { display: block; }
+    .chat-cursor summary {
+      padding: 0.75rem 1.25rem;
+      cursor: pointer;
+      list-style: none;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    .chat-cursor summary::-webkit-details-marker { display: none; }
+    .chat-cursor summary::before { content: "▶ "; font-size: 0.7em; }
+    .chat-cursor details[open] summary::before { content: "▼ "; }
+    .chat-cursor .chat-cursor-body {
+      padding: 0 1.25rem 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .chat-cursor .chat-cursor-body h1, .chat-cursor .chat-cursor-body h2, .chat-cursor .chat-cursor-body h3 { font-size: 1rem; margin: 0.5rem 0 0.25rem; }
+    #conversation-log.loading { color: var(--muted); font-style: italic; }
+    .chat-preamble h1 { font-size: 1rem; margin: 0 0 0.25rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>How well do multi-modal LLMs hear Mandarin tones? Can they hear tones? Let's find out!</h1>
+    <p class="subtitle">Yunus Abdülhayoğlu</p>
+
+    <h2>1. Why this?</h2>
+    <p>We wanted to see whether modern multi-modal LLMs can tell Mandarin tones apart from audio alone—focusing on tone (pitch contour), not word meaning. We use synthetic stimuli and real syllable recordings, then compare model guesses to random chance and to the real Mandarin tone distribution (where tone 4 is most frequent). The neutral 5th tone is left out.</p>
+
+    <h2>2. The four tones (brief)</h2>
+    <p>In Mandarin, each syllable carries one of four lexical tones by pitch contour:</p>
+    <ul>
+      <li><strong>T1</strong> — flat, relatively high</li>
+      <li><strong>T2</strong> — rising</li>
+      <li><strong>T3</strong> — dip then rise</li>
+      <li><strong>T4</strong> — fall from high to low</li>
+    </ul>
+    <p>The figure below shows the F0 contours we used for synthetic tones (same as in the WAVs).</p>
+
+    <figure>
+      <img src="figures/pitch_contours.png" alt="F0 (Hz) vs time (ms) for tones 1–4: flat, rising, dipping then rising, falling." width="720" height="576">
+      <figcaption>Pitch contours for the four Mandarin tones (synthetic). T1: high level; T2: rising; T3: dipping then rising; T4: falling.</figcaption>
+    </figure>
+
+    <h2>3. Listen: synthetic tones</h2>
+    <p>Pure pitch contours only (sine wave, F0(t), 280 ms, 16 kHz). No consonants or vowels—just the shape of the tone.</p>
+    <div class="audio-block">
+      <h4>Synthetic tones (T1–T4)</h4>
+      <div class="audio-row"><label>T1</label><audio controls src="audio/synthetic/tone1.wav"></audio></div>
+      <div class="audio-row"><label>T2</label><audio controls src="audio/synthetic/tone2.wav"></audio></div>
+      <div class="audio-row"><label>T3</label><audio controls src="audio/synthetic/tone3.wav"></audio></div>
+      <div class="audio-row"><label>T4</label><audio controls src="audio/synthetic/tone4.wav"></audio></div>
+    </div>
+
+    <h2>4. Listen: syllable “bai” (T1–T4)</h2>
+    <p>Four real Mandarin syllables (same segment, different tones) from our evaluation set.</p>
+    <div class="audio-block">
+      <h4>bai1, bai2, bai3, bai4</h4>
+      <div class="audio-row"><label>bai1</label><audio controls src="audio/syllables/cmn-bai1.mp3"></audio></div>
+      <div class="audio-row"><label>bai2</label><audio controls src="audio/syllables/cmn-bai2.mp3"></audio></div>
+      <div class="audio-row"><label>bai3</label><audio controls src="audio/syllables/cmn-bai3.mp3"></audio></div>
+      <div class="audio-row"><label>bai4</label><audio controls src="audio/syllables/cmn-bai4.mp3"></audio></div>
+    </div>
+
+    <h2>5. What we built</h2>
+    <p><strong>Synthetic audio:</strong> NumPy + SciPy, F0 curves as above, 40 Hz range, 16-bit WAV in <code>synthetic_tones/</code>. <strong>Evaluation:</strong> We sent 60 real-syllable clips (15 syllables × 4 tones) to each model via LiteLLM with a fixed prompt asking for pinyin+tone and the tone number (1–4). We parsed the answer and compared to the ground truth.</p>
+    <p><strong>Baseline:</strong> In real Mandarin, T4 is most common (~16.7%), then T2, T1, T3 (~8–12%). So we compare against random (25% per tone) and keep in mind that a bias toward predicting “4” may reflect both acoustics and this prior.</p>
+
+    <h2>6. Results (macro F1)</h2>
+    <p>Macro F1 (average of per-tone F1) on the 60-clip set. Random baseline ≈ 0.25.</p>
+    <figure>
+      <img src="figures/macro_f1.png" alt="Bar chart: Macro F1 by model. Gemini 3.0 Pro highest, then Gemini 2.5 Pro, then GPT variants." width="720" height="400">
+      <figcaption>Macro F1 by model. Gemini 3.0 Pro leads; all models beat random chance.</figcaption>
+    </figure>
+
+    <table>
+      <thead><tr><th>Model</th><th class="num">Macro F1</th></tr></thead>
+      <tbody>
+        <tr><td>Gemini 3.0 Pro</td><td class="num">0.82</td></tr>
+        <tr><td>Gemini 2.5 Pro</td><td class="num">0.74</td></tr>
+        <tr><td>GPT Audio (2025-08-28)</td><td class="num">0.58</td></tr>
+        <tr><td>GPT-4o Audio</td><td class="num">0.53</td></tr>
+        <tr><td>Gemini 2.0 Flash</td><td class="num">0.52</td></tr>
+      </tbody>
+    </table>
+    <p class="note">When interpreting: high recall on T4 or a tendency to predict “4” can reflect the Mandarin tone prior as well as acoustic discrimination.</p>
+
+    <h2>7. Repo and scripts</h2>
+    <p>Everything is in the <a href="https://github.com/yunus/mandarin-tones" target="_blank" rel="noopener">mandarin-tones</a> repo:</p>
+    <ul>
+      <li><code>scripts/generate_tones.py</code> — build synthetic WAVs</li>
+      <li><code>scripts/plot_pitch_contours.py</code> — pitch contour figure</li>
+      <li><code>scripts/run_tone_eval.py</code> — send audio to models, write CSV</li>
+      <li><code>scripts/analyze_tone_results.py</code> — confusion matrices, P/R/F1</li>
+      <li><code>scripts/plot_tone_results.py</code> — macro F1 bar chart</li>
+    </ul>
+    <p>For an up-to-date list of audio-capable models: <code>python scripts/fetch_audio_models_from_litellm.py</code> (no API keys needed).</p>
+
+    <h2>Meta</h2>
+    <p>For this article, I want to try something new. I'm including my full chat transcript from Cursor to show how I'm interacting with the AI agent. I'm doing this for two reasons: 1. For transparency, so the reader can follow the raw process. 2. To contribute to the discussion about best practices when using AI for coding. I saw people committing chat histories to repos and thought it was interesting and useful to read, so I wanted to do the same. </p>
+    <p>
+      Notes:
+      <ul>
+        <li>The transcript is missing some information, like the mode the agent was in (plan, ask, debug, agent)</li>
+        <li>The text starting with "Implement the plan as specified [...]" is actually injected by Cursor as user input, when you approve a plan that was created in "plan" mode</li>
+        <li>Also missing are manual actions, e.g. when I manually stop the agent or reject a command</li>
+        <li>Normally I would start a new chat for new tasks to keep the context clean, but here I wanted to keep everything in one chat for easier publishing</li>
+        <li>I like letting the agent run commands instead of running them myself (I approve each command manually). This does two things: 1. The agent can read the output of the command and plan the next steps or fix errors. 2. It's a canary specifically when using conda. Eventually the agent "forgets" to use the conda env, which tells me that the context window is full and I should probably start a new chat.</li>
+      </ul>
+    </p>
+    <div id="conversation-log" class="loading">Loading…</div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    (function () {
+      var CONVERSATION_MD = 'cursor_testing_llms_for_mandarin_tone_r.md';
+      var SUMMARY_MAX = 150;
+      var container = document.getElementById('conversation-log');
+
+      function escapeHtml(s) {
+        var div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      function firstLine(body) {
+        var lines = body.split('\n').map(function (l) { return l.trim(); });
+        for (var i = 0; i < lines.length; i++) {
+          if (lines[i].length > 0) return lines[i];
+        }
+        return '';
+      }
+
+      function truncate(s, maxLen) {
+        if (s.length <= maxLen) return s;
+        return s.slice(0, maxLen).trim() + '…';
+      }
+
+      function render() {
+        fetch(CONVERSATION_MD)
+          .then(function (r) {
+            if (!r.ok) throw new Error('Fetch failed');
+            return r.text();
+          })
+          .then(function (text) {
+            container.classList.remove('loading');
+            container.textContent = '';
+            var blocks = text.split(/\n---\n/);
+            var preamble = blocks[0].trim();
+            if (preamble) {
+              var pre = document.createElement('div');
+              pre.className = 'chat-preamble';
+              pre.style.cssText = 'font-size:0.9rem;color:var(--muted);margin-bottom:1rem;';
+              pre.innerHTML = marked.parse(preamble);
+              container.appendChild(pre);
+            }
+            for (var i = 1; i < blocks.length; i++) {
+              var block = blocks[i].trim();
+              if (!block) continue;
+              var first = block.indexOf('\n');
+              var firstLineText = first === -1 ? block : block.slice(0, first);
+              var body = first === -1 ? '' : block.slice(first + 1).trim();
+              if (firstLineText === '**User**') {
+                var userDiv = document.createElement('div');
+                userDiv.className = 'chat-user';
+                userDiv.innerHTML = marked.parse('**User:** ' + body);
+                container.appendChild(userDiv);
+              } else if (firstLineText === '**Cursor**') {
+                var summaryText = truncate(firstLine(body), SUMMARY_MAX);
+                var cursorDiv = document.createElement('div');
+                cursorDiv.className = 'chat-cursor';
+                cursorDiv.innerHTML =
+                  '<details><summary>' + escapeHtml(summaryText) + '</summary>' +
+                  '<div class="chat-cursor-body">' + marked.parse(body) + '</div></details>';
+                container.appendChild(cursorDiv);
+              }
+            }
+          })
+          .catch(function () {
+            container.classList.remove('loading');
+            container.textContent = 'Conversation log could not be loaded.';
+          });
+      }
+      render();
+    })();
+  </script>
+</body>
+</html>

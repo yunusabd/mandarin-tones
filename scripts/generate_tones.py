@@ -6,29 +6,39 @@ T2: rising frequency
 T3: dip then rise
 T4: fall from relatively high
 
+Parameters can be overridden by results/suggested_tone_params.json (from scripts/analyze_bai_tones.py -o results/suggested_tone_params.json).
 Output: 16-bit PCM WAV in synthetic_tones/ plus a manifest for LLM eval.
 """
 
 import json
-import os
 from pathlib import Path
 
 import numpy as np
 from scipy.io import wavfile
 
-# --- Parameters (explicit for reproducibility and variants) ---
+_ROOT = Path(__file__).resolve().parent.parent
+_PARAMS_FILE = _ROOT / "results" / "suggested_tone_params.json"
+
+# --- Default parameters (overridden by _PARAMS_FILE if present) ---
 DURATION_MS = 280  # typical syllable length
 SAMPLE_RATE = 16000  # Hz
-# Human tone range ~40 Hz; high and low define the full range.
 RANGE_HZ = 40.0
 F0_HIGH = 220.0  # Hz (relatively high)
-F0_LOW = F0_HIGH - RANGE_HZ   # 180 Hz (lower end)
-F0_MID = (F0_HIGH + F0_LOW) / 2  # 200 Hz (T3 start)
+F0_LOW = F0_HIGH - RANGE_HZ  # 180 Hz (lower end)
+
+if _PARAMS_FILE.exists():
+    _p = json.loads(_PARAMS_FILE.read_text())
+    DURATION_MS = int(_p.get("DURATION_MS", DURATION_MS))
+    RANGE_HZ = float(_p.get("RANGE_HZ", RANGE_HZ))
+    F0_HIGH = float(_p.get("F0_HIGH", F0_HIGH))
+    F0_LOW = float(_p.get("F0_LOW", F0_LOW))
+
+F0_MID = (F0_HIGH + F0_LOW) / 2  # T3 start
 F0_DIP = F0_LOW  # T3 dips to bottom of range
 AMPLITUDE = 0.8  # linear, before int16 conversion
 FADE_MS = 10     # short fade-in/fade-out to avoid clicks
 
-OUTPUT_DIR = Path(__file__).resolve().parent.parent / "synthetic_tones"
+OUTPUT_DIR = _ROOT / "synthetic_tones"
 MANIFEST_PATH = OUTPUT_DIR / "manifest.json"
 
 
