@@ -16,6 +16,14 @@ from pathlib import Path
 
 TONES = [1, 2, 3, 4]
 
+# TABLE II: number of samples per tone in training data (baseline prior)
+BASELINE_COUNTS = {1: 160_885, 2: 179_606, 3: 122_707, 4: 253_441}
+
+
+def baseline_percentages() -> dict[int, float]:
+    total = sum(BASELINE_COUNTS.values())
+    return {t: round(100 * BASELINE_COUNTS[t] / total, 1) for t in TONES}
+
 
 def load_results(csv_path: Path) -> list[dict]:
     rows = []
@@ -93,11 +101,12 @@ def main() -> int:
         print("No model rows in CSV.", file=sys.stderr)
         return 1
 
+    pct = baseline_percentages()
     report = [
         f"Tone evaluation metrics (from {csv_path})",
         f"Total rows: {len(rows)}",
         "",
-        "Note: In real Mandarin, T4 is most common (~16.7%), then T2, T1, T3 (~8%).",
+        f"Note: Training-data baseline (TABLE II): T1 {pct[1]}%, T2 {pct[2]}%, T3 {pct[3]}%, T4 {pct[4]}%.",
         "A bias toward predicting 4 may reflect that prior as well as acoustic cues.",
         "",
     ]
