@@ -45,6 +45,40 @@ def short_name(model: str) -> str:
     return model.split("/")[-1]
 
 
+def plot_confusion_matrix(
+    csv_path: Path,
+    model: str,
+    save_path: Path | None = None,
+    title: str | None = None,
+) -> None:
+    """Plot 4x4 confusion matrix heatmap for one model. Rows = true tone, cols = predicted."""
+    rows = load_results(csv_path)
+    cm = confusion_matrix(rows, model)
+    if title is None:
+        title = f"Confusion matrix: {short_name(model)} (60 clips)"
+
+    fig, ax = plt.subplots(figsize=(5.5, 4.5))
+    im = ax.imshow(cm, cmap="Blues", aspect="equal", vmin=0, vmax=15)
+    ax.set_xticks(range(4))
+    ax.set_yticks(range(4))
+    ax.set_xticklabels(["Pred 1", "Pred 2", "Pred 3", "Pred 4"])
+    ax.set_yticklabels(["True 1", "True 2", "True 3", "True 4"])
+    ax.set_xlabel("Predicted tone")
+    ax.set_ylabel("True tone")
+    ax.set_title(title)
+    for i in range(4):
+        for j in range(4):
+            color = "white" if cm[i][j] > 7 else "black"
+            ax.text(j, i, str(cm[i][j]), ha="center", va="center", color=color, fontsize=12)
+    plt.colorbar(im, ax=ax, label="Count")
+    fig.tight_layout()
+    if save_path is not None:
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
+        print(f"Saved: {save_path}")
+    plt.close(fig)
+
+
 def plot_macro_f1(csv_path: Path, save_path: Path | None = None) -> None:
     rows = load_results(csv_path)
     models = sorted({r["model"] for r in rows})
@@ -69,17 +103,24 @@ def plot_macro_f1(csv_path: Path, save_path: Path | None = None) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Plot macro F1 bar chart from tone eval CSV.")
+    parser = argparse.ArgumentParser(description="Plot macro F1 bar chart or confusion matrix from tone eval CSV.")
     parser.add_argument("csv", type=Path, nargs="?", default=DEFAULT_CSV, help="Results CSV")
     parser.add_argument("-o", "--output", type=Path, default=None, help="Output PNG path")
+    parser.add_argument("--confusion", action="store_true", help="Plot confusion matrix for one model")
+    parser.add_argument("--model", type=str, default="gemini/gemini-3-pro-preview", help="Model id for --confusion")
     args = parser.parse_args()
     csv_path = args.csv if args.csv.is_absolute() else Path.cwd() / args.csv
     if not csv_path.exists():
         print(f"File not found: {csv_path}", file=sys.stderr)
         return 1
-    out = args.output or FIGURES_DIR / "macro_f1.png"
-    out = out if out.is_absolute() else Path.cwd() / out
-    plot_macro_f1(csv_path, save_path=out)
+    if args.confusion:
+        out = args.output or FIGURES_DIR / "confusion_gemini3pro.png"
+        out = out if out.is_absolute() else Path.cwd() / out
+        plot_confusion_matrix(csv_path, args.model, save_path=out)
+    else:
+        out = args.output or FIGURES_DIR / "macro_f1.png"
+        out = out if out.is_absolute() else Path.cwd() / out
+        plot_macro_f1(csv_path, save_path=out)
     return 0
 
 

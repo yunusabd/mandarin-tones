@@ -16,7 +16,7 @@ DOCS_FIGURES = DOCS / "figures"
 DOCS_AUDIO_SYNTHETIC = DOCS / "audio" / "synthetic"
 DOCS_AUDIO_SYLLABLES = DOCS / "audio" / "syllables"
 
-FIGURES = ["pitch_contours.png", "macro_f1.png"]
+FIGURES = ["pitch_contours.png", "macro_f1.png", "confusion_gemini3pro.png"]
 SYNTHETIC = [f"tone{i}.wav" for i in range(1, 5)]
 SYLLABLES = ["cmn-bai1.mp3", "cmn-bai2.mp3", "cmn-bai3.mp3", "cmn-bai4.mp3"]
 
