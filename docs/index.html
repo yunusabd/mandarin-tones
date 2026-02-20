@@ -386,7 +386,21 @@
     <h1>How well do multi-modal LLMs hear Mandarin tones? Do they hear tones? Let's find out!</h1>
     <p class="subtitle">by Yunus Abdülhayoğlu &lt;hi@lingolingo.app&gt;</p>
 
+    <p>After reading this article <a href="https://simedw.com/2026/01/31/ear-pronunication-via-ctc/" target="_blank"
+        rel="noopener">https://simedw.com/2026/01/31/ear-pronunication-via-ctc/</a>, I was curious to see if multi-modal
+      LLMs could hear Mandarin tones. Especially since the article references the "bitter lesson":</p>
+    <blockquote>
+      <p>And if there’s one thing we’ve learned over the last decade, it’s the bitter lesson: when you have enough data
+        and compute, learned representations usually beat carefully hand-tuned systems.</p>
+    </blockquote>
 
+    Wouldn't it be funny if an article referencing the bitter lesson could suffer from the same bitter lesson? Okay, that's not
+    really funny. But it's certainly interesting. By the way, I'm not trying to take away from the accomplishments of the original article.
+    Even if SOTA LLMs can achieve similar results, there's still value in a small model that can run locally with low latency and for free.
+
+    <h2>Results</h2>
+    <p>The results indicate that there is some emergent ability to hear Mandarin tones in off-the-shelf multi-modal
+      LLMs, most notably Gemini 3.0 Pro. </p>
     <h2>Documenting My Approach</h2>
     <p>For this article, I want to try something new. I'm including my full chat transcript from Cursor to show how I'm
       interacting with the AI agent. I'm doing this for three reasons:
@@ -394,7 +408,7 @@
       <li>The initial prompt works well as an intro for this article. The reader and the LLM are actually in the same
         position of needing context and an overview, and the prompt delivers that in a information-dense way.</li>
       <li>For transparency, so the reader can follow the raw process.</li>
-      <li>To contribute to the discussion about documentation the use of AI when coding.</li>
+      <li>To contribute to the discussion about documenting the use of AI when coding.</li>
     </ol> I think it's valueable to see how people are using AI, and not just the output. We're still in the infancy of
     documenting AI-assisted coding. Eventually the prompts might be the only thing worth reading? (Please discuss).</p>
     <p>
@@ -477,6 +491,13 @@
         alt="Bar chart: Macro F1 by model on 60 real syllables. Gemini 3.0 Pro highest, then Gemini 2.5 Pro."
         width="720" height="400">
       <figcaption>Macro F1 by model (60 real syllables). Gemini 3.0 Pro leads; all models beat random chance.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="figures/confusion_gemini3pro.png"
+        alt="Confusion matrix for Gemini 3.0 Pro: rows = true tone, columns = predicted tone."
+        width="520" height="420">
+      <figcaption>Confusion matrix for Gemini 3.0 Pro (60 clips). Rows = true tone, columns = predicted tone.
       </figcaption>
     </figure>
 

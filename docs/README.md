@@ -8,7 +8,7 @@ This folder is the source for the project’s GitHub Pages site.
   python scripts/prepare_github_pages.py
   ```
   That copies into `docs/`:
-  - `figures/pitch_contours.png`, `figures/macro_f1.png`
+  - `figures/pitch_contours.png`, `figures/macro_f1.png`, `figures/confusion_gemini3pro.png`
   - `audio/synthetic/tone1.wav` … `tone4.wav`
   - `audio/syllables/cmn-bai1.mp3` … `cmn-bai4.mp3`
   - `cursor_testing_llms_for_mandarin_tone_r.md` (AI conversation log; keep the canonical file in repo root)
