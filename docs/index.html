@@ -482,7 +482,7 @@
     </div>
 
 
-    <h3>4. Testing Synthetic tones</h3>
+    <h2>3. Testing Synthetic tones</h2>
     <p>I tested the endpoints with the raw pitch audio, but the models were not able to distinguish any tones. This
       indicates that the detection of tones is tightly coupled with the phoetic form of the syllables and can't be
       referenced in an abstract way.</p>
@@ -551,7 +551,7 @@
       </table>
     </div>
 
-    <h2>5. Results</h2>
+    <h2>5. Testing with Real Syllables</h2>
 
     <p>Macro F1 (average of per-tone F1) on the 60-clip set. Random baseline ≈ 0.25.</p>
     <figure>
@@ -610,8 +610,11 @@
       prior as well as acoustic discrimination.</p>
 
     <h3>5.2 Syllable “hao” (4 clips)</h3>
-    <p>Same models on four clips for the syllable <strong>hao</strong> (hao1–hao4). Separate result file and
-      figures.</p>
+    <p>Same models on four clips for the syllable <strong>hao</strong> (hao1–hao4). Interestingly, the performance is
+      much worse, with the model erring towards the third and fourth tone. A possible explanation here is that there are
+      basically no words in Mandarin that use hao1, and while hao2 is more common, it is still orders of magnitudes less
+      used than hao3 (most commonly 好, "good") and hao4 (號, "number"), which are among the most commonly used words in
+      Mandarin. This of course would have to be taken into account when considering these systems for serious use.</p>
     <figure>
       <img src="figures/macro_f1_hao.png" alt="Macro F1 by model on 4 hao syllables." width="720" height="400">
       <figcaption>Macro F1 by model (syllable hao, 4 clips).</figcaption>
@@ -702,9 +705,6 @@
         alt="Confusion matrix for local endpoint: rows = true tone, columns = predicted tone." width="520" height="420">
       <figcaption>Confusion matrix for the local analyze-tones endpoint (60 clips).</figcaption>
     </figure>
-    <p class="note">Generate these figures after running the 60-clip eval:
-      <code>scripts/run_tone_eval_local_endpoint.py</code>, then <code>scripts/analyze_and_plot_local.py</code>. Copy
-      into <code>docs/</code> with <code>scripts/prepare_github_pages.py</code>.</p>
 
     <h2>7. Repo and scripts</h2>
     <p>Everything is in the <a href="https://github.com/yunus/mandarin-tones" target="_blank"
