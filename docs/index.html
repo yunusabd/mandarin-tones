@@ -392,16 +392,20 @@
     </figure>
 
     <p>After reading this article <a href="https://simedw.com/2026/01/31/ear-pronunication-via-ctc/" target="_blank"
-        rel="noopener">https://simedw.com/2026/01/31/ear-pronunication-via-ctc/</a> and exploring the failure cases (see above), I was curious to see if multi-modal
+        rel="noopener">https://simedw.com/2026/01/31/ear-pronunication-via-ctc/</a> and exploring the failure cases (see
+      above), I was curious to see if multi-modal
       LLMs could hear Mandarin tones. Especially since the article references the "bitter lesson":</p>
     <blockquote>
       <p>And if there’s one thing we’ve learned over the last decade, it’s the bitter lesson: when you have enough data
         and compute, learned representations usually beat carefully hand-tuned systems.</p>
     </blockquote>
 
-    Wouldn't it be funny if an article referencing the bitter lesson could suffer from the same bitter lesson? Okay, that's not
-    really funny. But it's certainly interesting. By the way, I'm not trying to take away from the accomplishments of the original article.
-    Even if SOTA LLMs can achieve similar results, there's still value in a small model that can run locally with low latency and for free.
+    Wouldn't it be funny if an article referencing the bitter lesson could suffer from the same bitter lesson? Okay,
+    that's not
+    really funny. But it's certainly interesting. By the way, I'm not trying to take away from the accomplishments of
+    the original article.
+    Even if SOTA LLMs can achieve similar results, there's still value in a small model that can run locally with low
+    latency and for free.
 
     <h2>Results</h2>
     <p>The results indicate that there is some emergent ability to hear Mandarin tones in off-the-shelf multi-modal
@@ -477,132 +481,11 @@
       <div class="audio-row"><label>bai4</label><audio controls src="audio/syllables/cmn-bai4.mp3"></audio></div>
     </div>
 
-    <h2>5. What we built</h2>
-    <p><strong>Synthetic audio:</strong> NumPy + SciPy, F0 curves as above, 60 Hz range, 464 ms, 16-bit WAV in
-      <code>synthetic_tones/</code>. <strong>Evaluation:</strong> We sent 60 real-syllable clips (15 syllables × 4
-      tones) and also 4 synthetic tone WAVs to each model via LiteLLM with a fixed prompt asking for pinyin+tone and the
-      tone number (1–4). We parsed the answer and compared to the ground truth.
-    </p>
-    <p><strong>Baseline:</strong> From training-data counts (TABLE II): T1 22.4%, T2 25.1%, T3 17.1%, T4 35.4%. So we
-      compare against random (25% per tone) and keep in mind that a bias toward predicting “4” may reflect both
-      acoustics and this prior.</p>
 
-    <h2>6. Results</h2>
-
-    <h3>6.1 Real syllables (60 clips)</h3>
-    <p>Macro F1 (average of per-tone F1) on the 60-clip set. Random baseline ≈ 0.25.</p>
-    <figure>
-      <img src="figures/macro_f1.png"
-        alt="Bar chart: Macro F1 by model on 60 real syllables. Gemini 3.0 Pro beats 3.1 Pro; all models beat random chance."
-        width="720" height="400">
-      <figcaption>Macro F1 by model (60 real syllables). Gemini 3.1 Pro and 3.0 Pro lead; all models beat random chance.
-      </figcaption>
-    </figure>
-    <figure>
-      <img src="figures/confusion_gemini3pro.png"
-        alt="Confusion matrix for Gemini 3.0 Pro: rows = true tone, columns = predicted tone."
-        width="520" height="420">
-      <figcaption>Confusion matrix for Gemini 3.0 Pro (60 clips). Confusing T3 for T2 is the easiest mistake to make, since these two tones are the most similar. This indicates that the model learned frequencies. The model not confusing T2 for T3 could indicate a slight bias towards T2 that emerges when confidence is low.
-      </figcaption>
-    </figure>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th class="num">Macro F1</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Gemini 3.0 Pro</td>
-            <td class="num">0.82</td>
-          </tr>
-          <tr>
-            <td>Gemini 3.1 Pro</td>
-            <td class="num">0.76</td>
-          </tr>
-          <tr>
-            <td>Gemini 2.5 Pro</td>
-            <td class="num">0.74</td>
-          </tr>
-          <tr>
-            <td>GPT Audio (2025-08-28)</td>
-            <td class="num">0.58</td>
-          </tr>
-          <tr>
-            <td>GPT-4o Audio</td>
-            <td class="num">0.53</td>
-          </tr>
-          <tr>
-            <td>Gemini 2.0 Flash</td>
-            <td class="num">0.52</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="note">When interpreting: high recall on T4 or a tendency to predict “4” can reflect the Mandarin tone
-      prior as well as acoustic discrimination.</p>
-
-    <h3>6.2 Syllable “hao” (4 clips)</h3>
-    <p>Same models on four clips for the syllable <strong>hao</strong> (hao1–hao4). Separate result file and
-      figures.</p>
-    <figure>
-      <img src="figures/macro_f1_hao.png"
-        alt="Macro F1 by model on 4 hao syllables."
-        width="720" height="400">
-      <figcaption>Macro F1 by model (syllable hao, 4 clips).</figcaption>
-    </figure>
-    <figure>
-      <img src="figures/confusion_gemini3pro_hao.png"
-        alt="Confusion matrix for Gemini 3.0 Pro on hao (4 clips)."
-        width="520" height="420">
-      <figcaption>Confusion matrix for Gemini 3.0 Pro (hao, 4 clips).</figcaption>
-    </figure>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th>T1 → pred</th>
-            <th>T2 → pred</th>
-            <th>T3 → pred</th>
-            <th>T4 → pred</th>
-            <th class="num">Correct</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Gemini 3.0 Pro</td><td>4</td><td>3</td><td>3</td><td>4</td><td class="num">3/4</td></tr>
-          <tr><td>GPT-4o Audio</td><td>4</td><td>4</td><td>3</td><td>4</td><td class="num">2/4</td></tr>
-          <tr><td>GPT Audio (2025-08-28)</td><td>—</td><td>—</td><td>—</td><td>4</td><td class="num">1/4</td></tr>
-          <tr><td>Gemini 2.5 Pro</td><td>4</td><td>3</td><td>3</td><td>3</td><td class="num">1/4</td></tr>
-          <tr><td>Gemini 2.0 Flash</td><td>3</td><td>—</td><td>3</td><td>3</td><td class="num">1/4</td></tr>
-          <tr><td>Gemini 3.1 Pro</td><td>3</td><td>3</td><td>3</td><td>—</td><td class="num">1/4</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="note">GPT Audio returned no tone for hao1–hao3; Gemini 2.0 Flash had no response for hao2; Gemini 3.1 Pro timed out on hao4.</p>
-
-    <h3>6.3 Local analyze-tones endpoint (60 clips)</h3>
-    <p>I ran the same 60-clip set (15 syllables × 4 tones) against my local <code>/api/v1/analyze-tones</code> endpoint.
-      Audio is sent as WAV only (no reference text), so tone recognition is from the user audio alone. Results below.</p>
-    <figure>
-      <img src="figures/macro_f1_local.png"
-        alt="Macro F1 for local analyze-tones endpoint on 60 clips."
-        width="720" height="400">
-      <figcaption>Macro F1 for the local endpoint (60 clips).</figcaption>
-    </figure>
-    <figure>
-      <img src="figures/confusion_local.png"
-        alt="Confusion matrix for local endpoint: rows = true tone, columns = predicted tone."
-        width="520" height="420">
-      <figcaption>Confusion matrix for the local analyze-tones endpoint (60 clips).</figcaption>
-    </figure>
-    <p class="note">Generate these figures after running the 60-clip eval: <code>scripts/run_tone_eval_local_endpoint.py</code>, then <code>scripts/analyze_and_plot_local.py</code>. Copy into <code>docs/</code> with <code>scripts/prepare_github_pages.py</code>.</p>
-
-    <h3>Synthetic tones</h3>
-    <p>I tested the endpoints with the raw pitch audio, but the models were not able to distinguish any tones. This indicates that the detection of tones is tightly coupled with the phoetic form of the syllables and can't be referenced in an abstract way.</p>
+    <h3>4. Testing Synthetic tones</h3>
+    <p>I tested the endpoints with the raw pitch audio, but the models were not able to distinguish any tones. This
+      indicates that the detection of tones is tightly coupled with the phoetic form of the syllables and can't be
+      referenced in an abstract way.</p>
     <div class="table-wrap">
       <table>
         <thead>
@@ -667,14 +550,161 @@
         </tbody>
       </table>
     </div>
-    <p>On the four synthetic WAVs (pure pitch contours), most models gave a tone for every clip but were wrong most of
-      the time. Gemini 3.0 Pro and 3.1 Pro each got one contour right (T1 and T2 respectively). For T3, 3.1 Pro did not
-      return a tone (it reported the audio did not attach). GPT-4o and Gemini 2.0 Flash predicted the same tone for
-      (nearly) all clips; Gemini 2.5 Pro mixed labels but got none correct.</p>
-    <p><strong>We therefore abandoned synthetic tones for evaluation.</strong> Reasons: (1) Only four stimuli—no
-      reliable statistics. (2) Contour-only audio is out-of-distribution for models trained on real speech; they may
-      “hear” it as speech and confabulate. (3) One model did not engage at all. So the main results in this post use
-      real syllables (60 clips) instead.</p>
+
+    <h2>5. Results</h2>
+
+    <p>Macro F1 (average of per-tone F1) on the 60-clip set. Random baseline ≈ 0.25.</p>
+    <figure>
+      <img src="figures/macro_f1.png"
+        alt="Bar chart: Macro F1 by model on 60 real syllables. Gemini 3.0 Pro beats 3.1 Pro; all models beat random chance."
+        width="720" height="400">
+      <figcaption>Macro F1 by model (60 real syllables). Gemini 3.1 Pro and 3.0 Pro lead; all models beat random chance.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="figures/confusion_gemini3pro.png"
+        alt="Confusion matrix for Gemini 3.0 Pro: rows = true tone, columns = predicted tone." width="520" height="420">
+      <figcaption>Confusion matrix for Gemini 3.0 Pro (60 clips). Confusing T3 for T2 is the easiest mistake to make,
+        since these two tones are the most similar. This indicates that the model learned frequencies. The model not
+        confusing T2 for T3 could indicate a slight bias towards T2 that emerges when confidence is low.
+      </figcaption>
+    </figure>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th class="num">Macro F1</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Gemini 3.0 Pro</td>
+            <td class="num">0.82</td>
+          </tr>
+          <tr>
+            <td>Gemini 3.1 Pro</td>
+            <td class="num">0.76</td>
+          </tr>
+          <tr>
+            <td>Gemini 2.5 Pro</td>
+            <td class="num">0.74</td>
+          </tr>
+          <tr>
+            <td>GPT Audio (2025-08-28)</td>
+            <td class="num">0.58</td>
+          </tr>
+          <tr>
+            <td>GPT-4o Audio</td>
+            <td class="num">0.53</td>
+          </tr>
+          <tr>
+            <td>Gemini 2.0 Flash</td>
+            <td class="num">0.52</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">When interpreting: high recall on T4 or a tendency to predict “4” can reflect the Mandarin tone
+      prior as well as acoustic discrimination.</p>
+
+    <h3>5.2 Syllable “hao” (4 clips)</h3>
+    <p>Same models on four clips for the syllable <strong>hao</strong> (hao1–hao4). Separate result file and
+      figures.</p>
+    <figure>
+      <img src="figures/macro_f1_hao.png" alt="Macro F1 by model on 4 hao syllables." width="720" height="400">
+      <figcaption>Macro F1 by model (syllable hao, 4 clips).</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/confusion_gemini3pro_hao.png" alt="Confusion matrix for Gemini 3.0 Pro on hao (4 clips)."
+        width="520" height="420">
+      <figcaption>Confusion matrix for Gemini 3.0 Pro (hao, 4 clips).</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>T1 → pred</th>
+            <th>T2 → pred</th>
+            <th>T3 → pred</th>
+            <th>T4 → pred</th>
+            <th class="num">Correct</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Gemini 3.0 Pro</td>
+            <td>4</td>
+            <td>3</td>
+            <td>3</td>
+            <td>4</td>
+            <td class="num">3/4</td>
+          </tr>
+          <tr>
+            <td>GPT-4o Audio</td>
+            <td>4</td>
+            <td>4</td>
+            <td>3</td>
+            <td>4</td>
+            <td class="num">2/4</td>
+          </tr>
+          <tr>
+            <td>GPT Audio (2025-08-28)</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>4</td>
+            <td class="num">1/4</td>
+          </tr>
+          <tr>
+            <td>Gemini 2.5 Pro</td>
+            <td>4</td>
+            <td>3</td>
+            <td>3</td>
+            <td>3</td>
+            <td class="num">1/4</td>
+          </tr>
+          <tr>
+            <td>Gemini 2.0 Flash</td>
+            <td>3</td>
+            <td>—</td>
+            <td>3</td>
+            <td>3</td>
+            <td class="num">1/4</td>
+          </tr>
+          <tr>
+            <td>Gemini 3.1 Pro</td>
+            <td>3</td>
+            <td>3</td>
+            <td>3</td>
+            <td>—</td>
+            <td class="num">1/4</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">GPT Audio returned no tone for hao1–hao3; Gemini 2.0 Flash had no response for hao2; Gemini 3.1 Pro
+      timed out on hao4.</p>
+
+    <h3>6.3 Local analyze-tones endpoint (60 clips)</h3>
+    <p>I ran the same 60-clip set (15 syllables × 4 tones) against my local <code>/api/v1/analyze-tones</code> endpoint.
+      Audio is sent as WAV only (no reference text), so tone recognition is from the user audio alone. Results below.
+    </p>
+    <figure>
+      <img src="figures/macro_f1_local.png" alt="Macro F1 for local analyze-tones endpoint on 60 clips." width="720"
+        height="400">
+      <figcaption>Macro F1 for the local endpoint (60 clips).</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/confusion_local.png"
+        alt="Confusion matrix for local endpoint: rows = true tone, columns = predicted tone." width="520" height="420">
+      <figcaption>Confusion matrix for the local analyze-tones endpoint (60 clips).</figcaption>
+    </figure>
+    <p class="note">Generate these figures after running the 60-clip eval:
+      <code>scripts/run_tone_eval_local_endpoint.py</code>, then <code>scripts/analyze_and_plot_local.py</code>. Copy
+      into <code>docs/</code> with <code>scripts/prepare_github_pages.py</code>.</p>
 
     <h2>7. Repo and scripts</h2>
     <p>Everything is in the <a href="https://github.com/yunus/mandarin-tones" target="_blank"
