@@ -5,10 +5,18 @@ save results to CSV for analysis.
 Loads .env for API keys (OPENAI_API_KEY, GOOGLE_API_KEY from GEMINI_API_KEY).
 
 Usage:
-  python run_tone_eval.py
-      → synthetic_tones/ + manifest.json (tone1.wav … tone4.wav)
-  python run_tone_eval.py --audio-dir audio_syllabs --manifest audio_syllabs/manifest_cai.json
-      → audio_syllabs/ with cmn-cai1.mp3 … cmn-cai4.mp3 (put those files in audio_syllabs/)
+  Manifest-based (batch):
+    python run_tone_eval.py
+        → synthetic_tones/ + manifest.json (tone1.wav … tone4.wav)
+    python run_tone_eval.py --audio-dir audio_syllabs --manifest audio_syllabs/manifest_cai.json
+        → audio_syllabs/ with cmn-cai1.mp3 … cmn-cai4.mp3
+  Single file (no manifest):
+    python run_tone_eval.py --audio-file /path/to/my.wav
+        → evaluate one recording; prints heard pinyin and predicted tone per model.
+  Record from microphone:
+    python run_tone_eval.py --record
+        → record from mic (default 3 s), then evaluate with same models.
+    python run_tone_eval.py --record --duration 5 --output results/my_recording.csv
 """
 
 import argparse
@@ -18,6 +26,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 # Load .env before litellm
@@ -42,6 +51,8 @@ MODELS = [
     "openai/gpt-4o-audio-preview",  # full 4o audio; mini often refuses to process audio
     "gemini/gemini-2.5-pro",
     "gemini/gemini-2.0-flash",  # GA; audio in + text out per Vertex migration table
+    "gemini/gemini-3-pro-preview",
+    "gemini/gemini-3.1-pro-preview",
 ]
 
 DEFAULT_AUDIO_DIR = _root / "synthetic_tones"
@@ -61,6 +72,7 @@ Reply with:
 2) The tone number alone: 1, 2, 3, or 4."""
 
 
+
 def load_manifest(manifest_path: Path) -> dict[str, int]:
     with open(manifest_path) as f:
         return json.load(f)
@@ -72,6 +84,28 @@ def encode_audio(path: Path) -> tuple[str, str]:
     b64 = base64.b64encode(data).decode("utf-8")
     fmt = "mp3" if path.suffix.lower() == ".mp3" else "wav"
     return b64, fmt
+
+
+def record_audio(duration_sec: float, sample_rate: int, out_path: Path) -> None:
+    """Record from default microphone for duration_sec, save as WAV to out_path. Requires sounddevice."""
+    try:
+        import sounddevice as sd
+        from scipy.io import wavfile
+    except ImportError as e:
+        if "sounddevice" in str(e).lower() or "No module named 'sounddevice'" in str(e):
+            raise SystemExit(
+                "Recording requires the sounddevice package. Install with: pip install sounddevice"
+            ) from e
+        raise
+    frames = int(duration_sec * sample_rate)
+    print(f"Recording for {duration_sec} s at {sample_rate} Hz ... (speak your syllable)", flush=True)
+    recording = sd.rec(frames, samplerate=sample_rate, channels=1, dtype="float32")
+    sd.wait()
+    # scipy.io.wavfile expects int16; convert float32 [-1,1] to int16
+    import numpy as np
+    recording_int = (np.clip(recording, -1, 1) * 32767).astype(np.int16)
+    wavfile.write(out_path, sample_rate, recording_int)
+    print(f"Saved to {out_path}", flush=True)
 
 
 def parse_predicted_tone(content: str | None) -> str:
@@ -117,11 +151,11 @@ def run_one(model: str, audio_path: Path, true_tone: int) -> tuple[str, str, str
         {
             "role": "user",
             "content": [
-                {"type": "text", "text": TONE_DEFINITIONS},
                 {
                     "type": "input_audio",
                     "input_audio": {"data": encoded, "format": fmt},
                 },
+                {"type": "text", "text": TONE_DEFINITIONS},
             ],
         },
     ]
@@ -184,14 +218,81 @@ def main() -> int:
         action="store_true",
         help="Merge new results into existing output CSV (replaces rows for same model+audio_file)",
     )
+    parser.add_argument(
+        "--audio-file",
+        type=Path,
+        default=None,
+        help="Evaluate a single audio file (WAV or MP3); no manifest. Mutually exclusive with --record and manifest-based usage.",
+    )
+    parser.add_argument(
+        "--record",
+        action="store_true",
+        help="Record from microphone then evaluate; requires sounddevice. Mutually exclusive with --audio-file and manifest-based usage.",
+    )
+    parser.add_argument(
+        "--duration",
+        type=float,
+        default=3.0,
+        help="Recording duration in seconds when using --record (default: 3).",
+    )
+    parser.add_argument(
+        "--sample-rate",
+        type=int,
+        default=16000,
+        help="Sample rate for --record in Hz (default: 16000).",
+    )
     args = parser.parse_args()
+
+    single_file_mode = args.record or args.audio_file is not None
+    if args.audio_file is not None and args.record:
+        parser.error("--audio-file and --record are mutually exclusive.")
+    models_to_run = [m.strip() for m in args.models.split(",")] if args.models else MODELS
+
+    if single_file_mode:
+        # Record or use provided file
+        if args.record:
+            out_path = _root / "results" / "recorded.wav"
+            RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+            record_audio(args.duration, args.sample_rate, out_path)
+            audio_path = out_path
+            audio_name = "recorded.wav"
+        else:
+            audio_path = args.audio_file if args.audio_file.is_absolute() else _root / args.audio_file
+            if not audio_path.exists():
+                print(f"Error: file not found: {audio_path}", file=sys.stderr)
+                return 1
+            audio_name = audio_path.name
+        total = len(models_to_run)
+        rows = []
+        for idx, model in enumerate(models_to_run, start=1):
+            print(f"  [{idx}/{total}] {model} ...", flush=True)
+            pred, heard_pinyin, raw = run_one(model, audio_path, 0)
+            print(f"    → heard: {heard_pinyin or '(none)'}, tone: {pred or '(none)'}")
+            rows.append({
+                "model": model,
+                "audio_file": audio_name,
+                "true_tone": 0,
+                "predicted_tone": pred or "",
+                "heard_pinyin": heard_pinyin or "",
+                "raw_response": raw.replace("\n", " ").strip(),
+            })
+        if args.output is not None:
+            out_csv = args.output if args.output.is_absolute() else _root / args.output
+            RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+            out_csv.parent.mkdir(parents=True, exist_ok=True)
+            fieldnames = ["model", "audio_file", "true_tone", "predicted_tone", "heard_pinyin", "raw_response"]
+            with open(out_csv, "w", newline="", encoding="utf-8") as f:
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+                w.writeheader()
+                w.writerows(rows)
+            print(f"Wrote {len(rows)} rows to {out_csv}")
+        return 0
+
+    # Manifest-based batch mode
     audio_dir = args.audio_dir if args.audio_dir.is_absolute() else _root / args.audio_dir
     manifest_path = args.manifest if args.manifest.is_absolute() else _root / args.manifest
-
     manifest = load_manifest(manifest_path)
     files = sorted(manifest.keys(), key=lambda f: manifest[f])
-    models_to_run = [m.strip() for m in args.models.split(",")] if args.models else MODELS
-    # Count how many we will actually run (existing files only)
     to_run = [(m, f) for m in models_to_run for f in files if (audio_dir / f).exists()]
     total = len(to_run)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -201,6 +302,8 @@ def main() -> int:
             out_csv = RESULTS_DIR / "tone_eval_15syllables.csv"
         elif "cai" in str(manifest_path):
             out_csv = RESULTS_DIR / "tone_eval_cai.csv"
+        elif "hao" in str(manifest_path):
+            out_csv = RESULTS_DIR / "tone_eval_hao.csv"
         else:
             out_csv = RESULTS_DIR / "tone_eval.csv"
     out_csv = out_csv if out_csv.is_absolute() else _root / out_csv

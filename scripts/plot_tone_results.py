@@ -32,6 +32,10 @@ def macro_f1(rows: list[dict], model: str) -> float:
 
 
 def short_name(model: str) -> str:
+    if model == "local" or "local" in model.lower():
+        return "Local (analyze-tones)"
+    if "gemini-3.1-pro" in model:
+        return "Gemini 3.1 Pro"
     if "gemini-3-pro" in model:
         return "Gemini 3.0 Pro"
     if "gemini-2.5-pro" in model:
