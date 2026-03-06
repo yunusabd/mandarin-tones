@@ -691,7 +691,7 @@
     <p class="note">GPT Audio returned no tone for hao1–hao3; Gemini 2.0 Flash had no response for hao2; Gemini 3.1 Pro
       timed out on hao4.</p>
 
-    <h2>6 Trying Something Different</h2>
+    <h2>6. Trying Something Different</h2>
     <p>With the results being promising, but still far from perfect, I had another idea: what if we add another modality, namely images, to provide more context to the LLM? The idea is to pass a F0 frequency graph to the model, so it can visually "see" the tone contour. For this, Praat is the gold standard, so I used my existing Praat integration from LingoLingo to generate tone pitch contours and passed them to Gemini 3.0 Pro. This method proved to be very effective and lead to a macro F1 of 92%. Unfortunately, due to the added latency of Praat and the added modality, requests took up to 20 seconds to complete, which would be too much for a real world application.
     </p>
     <figure>
